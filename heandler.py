@@ -1,26 +1,28 @@
-import requests
-import time
+from aiogram import Bot, Dispatcher, executor, types
 from acces_token import token
 
-API_URL = 'https://api.telegram.org/bot'
-BOT_TOKEN = token
-offset: int = -2
-timeout: int = 60
-updates: dict
+
+API_TOKEN: str = token
+
+bot: Bot = Bot(token=API_TOKEN)
+dp: Dispatcher = Dispatcher(bot)
+
+@dp.message_handler(commands=['start'])
+async def process_start_command(message: types.Message):
+    await message.answer('Hello there General Kenobi!')
 
 
-def do_something() -> None:
-    print('Был апдейт')
+@dp.message_handler(commands=['help'])
+async def process_help_comand(message: types.Message):
+    await message.answer('Text me something and i will resend it to you!')
 
+@dp.message_handler(commands=['say_hi'])
+async def process_hi_comand(message: types.Message):
+    await message.answer(f'Hello there @{message.from_user.username}! This bot have pur functional But for now!')
 
-while True: 
-    start_time = time.time()
-    updates = requests.get(f'{API_URL}{BOT_TOKEN}/getUpdates?offset={offset + 1}&timeout={timeout}').json()
+@dp.message_handler()
+async def send_echo(message: types.Message):
+    await message.reply('there is no functional yet')
 
-    if updates['result']:
-        for result in updates['result']:
-            offset = result['update_id']
-            do_something()
-
-    end_time = time.time()
-    print(f'Время между запросами к Telegram Bot API: {end_time - start_time}')
+if __name__ == '__main__':
+    executor.start_polling(dp, skip_updates=True)
