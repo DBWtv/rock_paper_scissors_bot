@@ -20,8 +20,14 @@ while counter < MAX_COUNTER:
         for result in updates['result']:
             offset = result['update_id']
             chat_id = result['message']['from']['id']
-            requests.get(
-                f'{API_URL}{BOT_TOKEN}/sendMessage?chat_id={chat_id}&text={TEXT}')
+            photo_url = requests.get('https://aws.random.cat/meow')
+            if photo_url.status_code == 200:
+                cat_photo_url = photo_url.json()['file']
+                requests.get(
+                    f'{API_URL}{BOT_TOKEN}/sendPhoto?chat_id={chat_id}&photo={cat_photo_url}')
+            else:
+                requests.get(
+                    f'{API_URL}{BOT_TOKEN}/sendMessage?chat_id={chat_id}&text=Не получилсоь, не фартануло')
 
             time.sleep(1)
             counter += 1
