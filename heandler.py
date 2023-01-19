@@ -1,47 +1,118 @@
-from aiogram import Bot, Dispatcher, executor, types
+import random
 from acces_token import token
+from aiogram import Bot, Dispatcher, executor
+from aiogram.types import Message
+from aiogram.dispatcher.filters import Text
 
 
-API_TOKEN: str = token
+# Вместо BOT TOKEN HERE нужно вставить токен вашего бота, полученный у @BotFather
+BOT_TOKEN : str = token
 
-bot: Bot = Bot(token=API_TOKEN)
+
+# Создаем объекты бота и диспетчера
+bot: Bot = Bot(BOT_TOKEN)
 dp: Dispatcher = Dispatcher(bot)
 
 
-async def process_start_command(message: types.Message):
-    await message.answer('Hello there General Kenobi!')
+# Количество попыток, доступных пользователю в игре
+ATTEMPTS : int = 5
+
+# Словарь, в котором будут храниться данные пользователя
+user : dict = {'in_game': False,
+               'secret_number': None,
+               'attempts': None,
+               'total_games': 0,
+               'wins': 0}
 
 
-async def process_help_comand(message: types.Message):
-    await message.answer('I am learning to work right now. I will response later!')
+# Функция возвращает случайное целое число от 1 до 100
+def get_random_number() -> int:
+    return random.randint(1, 100)
 
 
-async def process_hi_comand(message: types.Message):
-    await message.answer(f'Hello there @{message.from_user.username}! This bot have pure functional But for now!')
+# Этот хэндлер будет срабатывать на команду "/start"
+async def process_start_command(message: Message):
+    await message.answer('Привет!\nДавай сыграем в игру "Угадай число"?\n\nЧтобы получить правила игры и список доступных команд - отправьте команду /help')
 
 
-async def send_echo(message: types.Message):
-    await message.reply(message.text)
+# Этот хэндлер будет срабатывать на команду "/help"
+async def process_help_command(message: Message):
+    await message.answer(f'Правила игры:\n\nЯ загадываю число от 1 до 100, а вам нужно его угадать\nУ вас есть {ATTEMPTS} попыток\n\nДоступные команды:\n/help - правила игры и список команд\n/cancel - выйти из игры\n/stat - посмотреть статистику\n\nДавай сыграем?')
 
 
-async def send_photo_echo(message: types.Message):
-    await message.answer_photo(message.photo[0].file_id)
+# Этот хэндлер будет срабатывать на команду "/stat"
+async def process_stat_command(message: Message):
+    await message.answer(f'Всего игр сыграно: {user["total_games"]}\nИгр выиграно: {user["wins"]}')
 
 
-async def send_sticker_echo(message: types.Message):
-    await message.answer_sticker(message.sticker.file_id)
+# Этот хэндлер будет срабатывать на команду "/cancel"
+async def process_cancel_command(message: Message):
+    if user['in_game']:
+        await message.answer('Вы вышли из игры. Если захотите сыграть снова - напишите об этом')
+        user['in_game'] = False
+    else:
+        await message.answer('А мы итак с вами не играем. Может, сыграем разок?')
 
 
-async def proccess_audio_message(message: types.Message):
-    await message.answer(text='Я не умею обрабатывать голосовые сообщения')
+# Этот хэндлер будет срабатывать на согласие пользователя сыграть в игру
+async def process_positive_answer(message: Message):
+    if not user['in_game']:
+        await message.answer('Ура!\n\nЯ загадал число от 1 до 100, попробуй угадать!')
+        user['in_game'] = True
+        user['secret_number'] = get_random_number()
+        user['attempts'] = ATTEMPTS
+    else:
+        await message.answer('Пока мы играем в игру я могу реагировать только на числа от 1 до 100 и команды /cancel и /stat')
 
+
+# Этот хэндлер будет срабатывать на отказ пользователя сыграть в игру
+async def process_negative_answer(message: Message):
+    if not user['in_game']:
+        await message.answer('Жаль :(\n\nЕсли захотите поиграть - просто напишите об этом')
+    else:
+        await message.answer('Мы же сейчас с вами играем. Присылайте, пожалуйста, числа от 1 до 100')
+
+
+# Этот хэндлер будет срабатывать на отправку пользователем чисел от 1 до 100
+async def process_numbers_answer(message: Message):
+    if user['in_game']:
+        if int(message.text) == user['secret_number']:
+            await message.answer('Ура!!! Вы угадали число!\n\nМожет, сыграем еще?')
+            user['in_game'] = False
+            user['total_games'] += 1
+            user['wins'] += 1
+        elif int(message.text) > user['secret_number']:
+            await message.answer('Мое число меньше')
+            user['attempts'] -= 1
+        elif int(message.text) < user['secret_number']:
+            await message.answer('Мое число больше')
+            user['attempts'] -= 1
+        
+        if user['attempts'] == 0:
+            await message.answer(f'К сожалению, у вас больше не осталось попыток. Вы проиграли :(\n\nМое число было {user["secret_number"]}\n\nДавайте сыграем еще?')
+            user['in_game'] = False
+            user['total_games'] += 1
+    else:
+        await message.answer('Мы еще не играем. Хотите сыграть?')
+
+
+# Этот хэндлер будет срабатывать на остальные текстовые сообщения
+async def process_other_text_answers(message: Message):
+    if user['in_game']:
+        await message.answer('Мы же сейчас с вами играем. Присылайте, пожалуйста, числа от 1 до 100')
+    else:
+        await message.answer('Я довольно ограниченный бот, давайте просто сыграем в игру?')
+
+
+# Регистрируем хэндлеры
 dp.register_message_handler(process_start_command, commands='start')
-dp.register_message_handler(process_help_comand, commands='help')
-dp.register_message_handler(process_hi_comand, commands='say_hi')
-dp.register_message_handler(proccess_audio_message, content_types=['voice'])
-dp.register_message_handler(send_photo_echo, content_types=['photo'])
-dp.register_message_handler(send_sticker_echo, content_types=['sticker'])
-dp.register_message_handler(send_echo)
+dp.register_message_handler(process_help_command, commands='help')
+dp.register_message_handler(process_stat_command, commands='stat')
+dp.register_message_handler(process_cancel_command, commands='cancel')
+dp.register_message_handler(process_positive_answer, Text(equals=['Да', 'Давай', 'Сыграем', 'Игра', 'Играть', 'Хочу играть'], ignore_case=True))
+dp.register_message_handler(process_negative_answer, Text(equals=['Нет', 'Не', 'Не хочу'], ignore_case=True))
+dp.register_message_handler(process_numbers_answer, lambda x: x.text.isdigit() and 1 <= int(x.text) <= 100)
+dp.register_message_handler(process_other_text_answers)
 
 
 if __name__ == '__main__':
