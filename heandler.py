@@ -8,24 +8,27 @@ bot: Bot = Bot(token=API_TOKEN)
 dp: Dispatcher = Dispatcher(bot)
 
 
-@dp.message_handler(commands=['start'])
 async def process_start_command(message: types.Message):
     await message.answer('Hello there General Kenobi!')
 
 
-@dp.message_handler(commands=['help'])
 async def process_help_comand(message: types.Message):
-    await message.answer('Text me something and i will resend it to you!')
+    await message.answer('I am learning to work right now. I will response later!')
 
 
-@dp.message_handler(commands=['say_hi'])
 async def process_hi_comand(message: types.Message):
     await message.answer(f'Hello there @{message.from_user.username}! This bot have pure functional But for now!')
 
 
-@dp.message_handler()
 async def send_echo(message: types.Message):
-    await message.reply('there is no functional yet')
+    await message.reply(message.text)
+
+dp.register_message_handler(process_start_command, commands='start')
+dp.register_message_handler(process_help_comand, commands='help')
+dp.register_message_handler(process_hi_comand, commands='say_hi')
+dp.register_message_handler(send_echo)
+
+
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
