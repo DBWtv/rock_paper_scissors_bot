@@ -1,39 +1,43 @@
-from aiogram import Bot, Dispatcher, executor, types
-from aiogram.types import ReplyKeyboardMarkup, ReplyKeyboardRemove, KeyboardButton, KeyboardButtonPollType
-from aiogram.types.web_app_info import WebAppInfo
+from aiogram import Dispatcher
+from aiogram.types import Message
+from aiogram.dispatcher.filters import Text
 
-from environs import Env
-
-Env = Env()
-Env.read_env()
-
-# Вместо BOT TOKEN HERE нужно вставить токен вашего бота, полученный у @BotFather
-API_TOKEN: str = Env('TOKEN')
-
-# Создаем объекты бота и диспетчера
-bot: Bot = Bot(token=API_TOKEN)
-dp: Dispatcher = Dispatcher(bot)
-
-keyboard: ReplyKeyboardMarkup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-
-keyboard.add(*(str(i) for i in range(1, 8)))
+from lexicon.lexicon import LEXICON_RU
+from keyboards.keyboards import yes_no_kb, game_kb
+from services.services import get_bot_choice, get_winner
 
 
-# Этот хэндлер будет срабатывать на команду "/start"
-async def process_start_command(message: types.Message):
-    await message.answer('Экспериментируем со специальными кнопками', reply_markup=keyboard)
+async def process_start_command(messag: Message):
+    await messag.answer(text=LEXICON_RU['/start'], reply_markup=yes_no_kb)
 
 
-# Этот хэндлер будет срабатывать на ответ "Огурцов 🥒" и удалять клавиатуру
-async def process_cucumber_answer(message: types.Message):
-    await message.answer('Да, иногда кажется, что огурцов кошки боятся больше')
+async def process_help_command(message: Message):
+    await message.answer(text=LEXICON_RU['/help'], reply_markup=yes_no_kb)
 
 
-# Регистрируем хэндлеры
-dp.register_message_handler(process_start_command, commands='start')
-
-dp.register_message_handler(process_cucumber_answer, text='Огурцов 🥒')
+async def process_yes_answer(message: Message):
+    await message.answer(text=LEXICON_RU['yes'], reply_markup=game_kb)
 
 
-if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=True)
+async def process_no_answer(message: Message):
+    await message.answer(text=LEXICON_RU['no'])
+
+
+async def process_game_button(message: Message):
+    bot_choice = get_bot_choice()
+    await message.answer(text=f'{LEXICON_RU["bot_choice"]} - {LEXICON_RU[bot_choice]}')
+    winner = get_winner(message.text, bot_choice)
+    await message.answer(text=LEXICON_RU[winner], reply_markup=yes_no_kb)
+
+
+def register_user_handlers(dp: Dispatcher):
+    dp.register_message_handler(process_start_command, commands='start')
+    dp.register_message_handler(process_help_command, commands='help')
+    dp.register_message_handler(process_yes_answer,
+                                text=LEXICON_RU['yes_button'])
+    dp.register_message_handler(process_no_answer,
+                                text=LEXICON_RU['no_button'])
+    dp.register_message_handler(process_game_button,
+                                Text(equals=[LEXICON_RU['rock'],
+                                             LEXICON_RU['paper'],
+                                             LEXICON_RU['scissors']]))
