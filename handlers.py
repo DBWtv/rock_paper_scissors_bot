@@ -1,4 +1,4 @@
-from acces_token import token
+from access_token import TOKEN
 import random
 
 from aiogram import Bot, Dispatcher, executor
@@ -7,7 +7,7 @@ from aiogram.dispatcher.filters import Text
 
 
 # Вместо BOT TOKEN HERE нужно вставить токен вашего бота, полученный у @BotFather
-BOT_TOKEN : str = token
+BOT_TOKEN : str = TOKEN
 
 
 # Создаем объекты бота и диспетчера
