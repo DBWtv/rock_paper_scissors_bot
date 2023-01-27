@@ -24,7 +24,23 @@ end_simbols = [',', '.', '!', ':', ';', '?']
 
 
 def prepare_book(path: str) -> None:
-    pass
+    with open(path) as b:
+        text = b.read()
+    start = 0
+    size = PAGE_SIZE
+    i = 0
+    while start + size < len(text):
+        i += 1
+        prepare = _get_part_text(text, start, size)
+        book[i] = prepare[0].lstrip('\n').lstrip(' ')
+        start += prepare[1]
+    i += 1
+    prepare = _get_part_text(text, start, size)
+    book[i] = prepare[0].lstrip('\n').lstrip(' ')
+    
+
 
 
 prepare_book(BOOK_PATH)
+
+print(book)
