@@ -32,11 +32,11 @@ def prepare_book(path: str) -> None:
     while start + size < len(text):
         i += 1
         prepare = _get_part_text(text, start, size)
-        book[i] = prepare[0].lstrip('\n').lstrip(' ')
+        book[i] = prepare[0].lstrip()
         start += prepare[1]
     i += 1
     prepare = _get_part_text(text, start, size)
-    book[i] = prepare[0].lstrip('\n').lstrip(' ')
+    book[i] = prepare[0].lstrip()
     
 
 
